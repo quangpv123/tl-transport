@@ -1,11 +1,14 @@
 import { useParams, Link } from "react-router-dom"
 import React, { useState, useEffect } from 'react'
 import { DatePicker, Select, Tag, Popover, Button, Checkbox, Modal } from 'antd'
+import { CheckboxChangeEvent } from 'antd/es/checkbox'
+import { CheckboxValueType } from 'antd/es/checkbox/Group'
 import moment from 'moment'
 import 'moment/locale/vi'
 import axios from "axios"
 import { CaretDownOutlined } from '@ant-design/icons'
 import ReactPaginate from "react-paginate"
+import { faL } from "@fortawesome/free-solid-svg-icons"
 
 function Items() {
     const { id } = useParams()
@@ -222,7 +225,10 @@ function Items() {
             console.log(error)
         }
       }
-      
+
+    //Check item
+    
+
     return (
         <>
             <div className="grid grid-cols-[400px_240px_150px_300px] mx-auto gap-4 items-center">
@@ -318,10 +324,15 @@ function Items() {
 
                 </Popover>
             </div>
-
+            
             <table>
                 <thead className="border-b">
                     <tr>
+                        <th className={selectStatus.length === 1 ? "" : "hidden"}>
+                            <Checkbox
+                
+                            ></Checkbox>
+                        </th>
                         <th>STT</th>
                         {
                             checkedValues?.map((item, index) => {
@@ -332,15 +343,36 @@ function Items() {
                         }
                     </tr>
                 </thead>
+               
                 <tbody className="border-b">
-                    {
+                   {
                         dataGoods.data?.map((item, index) => {
-                            console.log(item.status)
                             return (
-                                <tr className={selectStatus.length === 0 ? "border-b" :
-                                               selectStatus.includes(1) ? "border-b bg-[#DFF0D8]":
-                                               null
-                                }>
+                                
+                                <tr className={selectStatus.length === 0 ? "border-b" : 
+                                                 (() => {
+                                                    switch(item.status){
+                                                        case "0":
+                                                            return "border-b bg-[#D9EDF7]"
+                                                        case "1":
+                                                            return "border-b bg-[#DFF0D8]"
+                                                        case "2":
+                                                            return "border-b bg-[#bbf7d0]"
+                                                        case "3":
+                                                            return "border-b bg-[#86efac]"
+                                                        case "4":
+                                                            return "border-b bg-[#dcfce7]"
+                                                        case "-3":
+                                                            return "border-b bg-[#E7E7E7]"
+                                                        default:
+                                                            return null
+                                                    } 
+
+                                                })()
+                                }>  
+                                    <td className={selectStatus.length === 1 ? "" : "hidden"}>
+                                        <Checkbox></Checkbox>
+                                    </td>
                                     <td>{currentPage > 0 ? numberPage * (currentPage - 1) + index + 1 : index + 1}</td>
                                     {checkedValues?.map((i, index) => (
                                         <td className='px-4 py-4' key={index}>
@@ -383,20 +415,20 @@ function Items() {
                                                 null
                                             }
                                         </td>
-                                    ))}
-
+                                    ))} 
                                 </tr>
                             )
                         })
                     }
+                
                 </tbody>
+                
                 <tfoot className="font-medium">
                     <tr>
                         <td>{dataGoods.count > 0 ? dataGoods.count : null}</td>
                     </tr>
                 </tfoot>
             </table>
-
             <div className="flex mt-2 justify-between pt-4">
                 <div className={dataGoods.count > 0 ? "flex" : "hidden"}>
                     <p className="text-sm text-gray-700 mr-3 mt-[1px]">Kích thước trang:</p>
