@@ -174,7 +174,7 @@ function Customers() {
           </div>
         </div>
       </div>
-      <div className={showForm ? "modal flex fixed top-0 right-0 bottom-0 left-0" : "hidden modal flex fixed top-0 right-0 bottom-0 left-0"}> <AddCustomer handleShowForm={handleShowForm} /></div>
+      <div className={showForm ? "modal flex fixed top-0 right-0 bottom-0 left-0" : "hidden"}> <AddCustomer handleShowForm={handleShowForm} /></div>
     </DataContext.Provider>
   )
 }

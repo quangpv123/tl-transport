@@ -1,14 +1,11 @@
 import { useParams, Link } from "react-router-dom"
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { DatePicker, Select, Tag, Popover, Button, Checkbox, Modal } from 'antd'
-import { CheckboxChangeEvent } from 'antd/es/checkbox'
-import { CheckboxValueType } from 'antd/es/checkbox/Group'
 import moment from 'moment'
 import 'moment/locale/vi'
 import axios from "axios"
-import { CaretDownOutlined } from '@ant-design/icons'
+import { CaretDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, DeleteFilled, StopFilled } from '@ant-design/icons'
 import ReactPaginate from "react-paginate"
-import { faL } from "@fortawesome/free-solid-svg-icons"
 
 function Items() {
     const { id } = useParams()
@@ -37,6 +34,12 @@ function Items() {
             const formattedEnd = end ? moment(end).format('YYYY-MM-DD') + ' ' + moment().format('HH:mm:ss') : null;
             setFromDate(formattedStart);
             settoDate(formattedEnd);
+            console.log("Bắt đầu", formattedStart, "Kết thuc", formattedEnd)
+        } else {
+            setFromDate(null)
+            settoDate(null)
+            setShowPicker("hidden")
+            setShowAllTime("relative text-sm left-[170px] cursor-pointer")
         }
     };
 
@@ -91,67 +94,33 @@ function Items() {
 
     //Get API hàng hóa render ra màn hình
     const [dataGoods, setDataGoods] = useState([])
-
-    useEffect(() => {
-        const fetchHangHoa = async () => {
-            try {
-                const response = await axios.get('/api/hanghoas', {
-                    params:
-                    {
-                        status: selectStatusStr,
-                        page: currentPage,
-                        filterByWarehouses: filterByWarehousesStr,
-                        fromDate: fromDate,
-                        toDate: toDate,
-                        numberpage: numberPage,
-                        customer_id: id,
-                        paymentMethod: paymentMethod
-                    }
-                })
-                setDataGoods(response.data)
-                setButtonTotal(Math.ceil(response.data.count / numberPage))
-            } catch (error) {
-                console.log(error)
-            }
+    const fetchHangHoa = useCallback(async () => {
+        try {
+            const response = await axios.get('/api/hanghoas', {
+                params:
+                {
+                    status: selectStatusStr,
+                    page: currentPage,
+                    filterByWarehouses: filterByWarehousesStr,
+                    fromDate: fromDate,
+                    toDate: toDate,
+                    numberpage: numberPage,
+                    customer_id: id,
+                    paymentMethod: paymentMethod
+                }
+            })
+            setDataGoods(response.data)
+            setButtonTotal(Math.ceil(response.data.count / numberPage))
+        } catch (error) {
+            console.log(error)
+        } finally {
+            setIdItem([])
         }
-        fetchHangHoa()
     }, [selectStatusStr, currentPage, filterByWarehousesStr, fromDate, toDate, numberPage, id, paymentMethod])
-    //items select colum table
-    const itemsTableColumn = [
-        { label: 'Khách hàng', value: 'Khách hàng' },
-        { label: 'Tên hàng hóa', value: 'Tên hàng hóa' },
-        { label: 'Đối tác', value: 'Đối tác' },
-        { label: 'Cân nặng(KG)', value: 'Cân nặng(KG)' },
-        { label: 'Ngày nhận', value: 'Ngày nhận' },
-        { label: 'Ngày giao hàng', value: 'Ngày giao hàng' },
-        { label: 'Khách hàng trả', value: 'Khách hàng trả' },
-        { label: 'Trả đối tác', value: 'Trả đối tác' },
-        { label: 'Trả trước', value: 'Trả trước' },
-        { label: 'Còn lại', value: 'Còn lại' },
-        { label: 'Vị Trí hiện tại', value: 'Vị Trí hiện tại' },
-        { label: 'Gửi từ', value: 'Gửi từ' },
-        { label: 'Gửi đến', value: 'Gửi đến' },
-        { label: 'Cách trả phí', value: 'Cách trả phí' },
-        { label: 'Giá trị hàng', value: 'Giá trị hàng' },
-        { label: 'Trạng thái', value: 'Trạng thái' },
-        { label: 'Kho', value: 'Kho' },
-        { label: 'Tỉ giá', value: 'Tỉ giá' }
-    ]
+    useEffect(() => {
+        fetchHangHoa()
+    }, [fetchHangHoa])
 
-    const defaultItemsTableColumn = [
-        'Khách hàng', 'Tên hàng hóa', 'Cân nặng(KG)', 'Đối tác',
-        'Ngày nhận', 'Ngày giao hàng', 'Khách hàng trả',
-        'Trả đối tác', 'Trả trước', 'Còn lại', 'Tỉ giá'
-    ]
-
-    const [checkedValues, setCheckedValues] = useState(defaultItemsTableColumn)
-    const getValuesChecked = (checkedValues) => {
-        setCheckedValues(checkedValues);
-    };
-
-    const resetDefalut = () => {
-        setCheckedValues(defaultItemsTableColumn)
-    }
     //Thêm hàng hóa
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
@@ -161,10 +130,10 @@ function Items() {
     const [selectedButton, setSelectedButton] = useState(null);
     const [price, setPrice] = useState("")
     const [fromDateAdd, setFromDateAdd] = useState("")
-    const [note,setNote] = useState("")
+    const [note, setNote] = useState("")
     const [from, setFrom] = useState(null)
     const [to, setTo] = useState(null)
-    
+
 
     const showModal = () => {
         setOpen(true);
@@ -173,7 +142,7 @@ function Items() {
         setLoading(true);
         addItems()
         setTimeout(() => {
-        setLoading(false);
+            setLoading(false);
         }, 2000);
     };
     const handleSubmitAndOut = () => {
@@ -190,15 +159,15 @@ function Items() {
 
     const setPayType = (value) => {
         setSelectedButton(value);
-      };
-    
+    };
+
     useEffect(() => {
         const getInfo = async () => {
             try {
                 const response = await axios.get(`/api/khachhangs/${id}`)
                 setFrom(response.data.transferFrom)
                 setTo(response.data.transferTo)
-            } catch(error) {
+            } catch (error) {
                 console.log(error)
             }
         }
@@ -219,18 +188,316 @@ function Items() {
                 value,
                 warehouseId: filterByWarehousesStr,
                 weight,
-                
+
             })
-        } catch(error) {
+        } catch (error) {
             console.log(error)
         }
-      }
+    }
 
-    //Check item
-    
+    /// Xóa hàng hóa
+    const [modalDeleteOpen, setModalDeleteOpen] = useState(false)
+    const [modalStopOpen, setModalStopOpen] = useState(false)
+    const [idItem, setIdItem] = useState([])
+    const [idBtn, setInBtn] = useState("")
+
+
+    const handleListId = (e, id) => {
+        const { checked } = e.target
+        setIdItem([...idItem, id])
+        if (!checked) {
+            setIdItem(idItem.filter(item => item !== id))
+        }
+    }
+
+    const onCheckAll = (e) => {
+        const checkAlll = idItem.length === dataGoods?.data?.length && dataGoods?.data?.length !== 0;
+        if (checkAlll) {
+            setIdItem([])
+        } else {
+            setIdItem(dataGoods?.data?.map(i => i.id))
+        }
+    }
+
+    const showModalDelete = (id) => {
+        setModalDeleteOpen(true);
+        setIdItem([...idItem, id])
+        setInBtn(id)
+    }
+
+    const showModalStop = (id) => {
+        setModalStopOpen(true);
+        setIdItem([...idItem, id])
+        setInBtn(id)
+    }
+
+    const handleCancelModal = () => {
+        setModalDeleteOpen(false)
+        setModalStopOpen(false)
+        setIdItem(idItem.filter(item => item !== idBtn))
+    }
+    const handleOkDelete = async () => {
+        try {
+           await axios.post('/api/hanghoas/delete', { id: idItem });
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIdItem([])
+            fetchHangHoa()
+            setModalDeleteOpen(false)
+        }
+    }
+
+    const handleOkStop = async () => {
+        try {
+            await axios.post(`/api/hanghoas/${idItem}/-3`);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIdItem([])
+            fetchHangHoa()
+            setModalStopOpen(false)
+        }
+    }
+
+    //Chọn cột hiển thị, chuyển vị trí cột
+
+    const [itemFields, setItemFields] = useState([])
+    const [updatedItemFields, setUpdatedItemFields] = useState([])
+
+    const fetchItemFields = async () => {
+        try {
+            const response = await axios.get('/api/user/item-fields')
+            setItemFields(response.data)
+            setUpdatedItemFields(response.data)
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+    useEffect(() => {
+        fetchItemFields()
+    }, [])
+
+    const fetchItemFieldsUpdate = async () => {
+        try {
+            await axios.post('/api/user/item-fields', updatedItemFields)
+            fetchItemFields()
+        } catch (error) {
+            console.log(error)
+        }
+    }
+
+
+    const updatedShowColumns = (id, checked) => {
+        const update = updatedItemFields?.map(item => {
+            if (item.id === id) {
+                return { ...item, selected: checked }
+            }
+            return item
+        })
+        setUpdatedItemFields(update)
+    }
+
+    const moveLeft = (index, itemFields) => {
+        for (let i = index - 1; i >= 0; i--) {
+            if (itemFields[i].selected) {
+                const temp = updatedItemFields[index];
+                updatedItemFields[index] = updatedItemFields[i];
+                updatedItemFields[i] = temp
+                break;
+            }
+        }
+        fetchItemFieldsUpdate()
+    }
+
+    const moveRight = (index, itemFields) => {
+        for (let i = index + 1; i < itemFields.length; i++) {
+            if (itemFields[i].selected) {
+                const temp = updatedItemFields[index];
+                updatedItemFields[index] = updatedItemFields[i];
+                updatedItemFields[i] = temp
+                break;
+            }
+        }
+        fetchItemFieldsUpdate()
+    }
+
+    const reset = () => {
+        setUpdatedItemFields([
+            {
+                "id": 1,
+                "name": "customer",
+                "label": "Khách hàng",
+                "colName": "Khách hàng",
+                "selected": true,
+                "order": 0
+            },
+            {
+                "id": 2,
+                "name": "name",
+                "label": "Tên hàng hoá",
+                "colName": "Hàng hoá",
+                "selected": true,
+                "order": 1
+            },
+            {
+                "id": 3,
+                "name": "weight",
+                "label": "Cân nặng",
+                "colName": "KG",
+                "selected": true,
+                "order": 2
+            },
+            {
+                "id": 4,
+                "name": "partner",
+                "label": "Đối tác",
+                "colName": "Đối tác",
+                "selected": true,
+                "order": 3
+            },
+            {
+                "id": 5,
+                "name": "startDate",
+                "label": "Ngày nhận",
+                "colName": "Ngày nhận",
+                "selected": true,
+                "order": 4
+            },
+            {
+                "id": 6,
+                "name": "endDate",
+                "label": "Ngày giao hàng",
+                "colName": "Ngày giao hàng",
+                "selected": true,
+                "order": 5
+            },
+            {
+                "id": 7,
+                "name": "customerPaid",
+                "label": "Khách hàng trả",
+                "colName": "Khách hàng trả",
+                "selected": true,
+                "order": 6
+            },
+            {
+                "id": 8,
+                "name": "payPartner",
+                "label": "Trả đối tác",
+                "colName": "Trả đối tác",
+                "selected": true,
+                "order": 7
+            },
+            {
+                "id": 9,
+                "name": "prepaid",
+                "label": "Trả trước",
+                "colName": "Trả trước",
+                "selected": true,
+                "order": 8
+            },
+            {
+                "id": 10,
+                "name": "remainPrice",
+                "label": "Còn lại",
+                "colName": "Còn lại",
+                "selected": true,
+                "order": 9
+            },
+            {
+                "id": 11,
+                "name": "currentLocation",
+                "label": "Vị trí hiện tại",
+                "colName": "Vị trí",
+                "selected": false,
+                "order": 10
+            },
+            {
+                "id": 12,
+                "name": "from",
+                "label": "Gửi từ",
+                "colName": "Gửi từ",
+                "selected": false,
+                "order": 11
+            },
+            {
+                "id": 13,
+                "name": "to",
+                "label": "Gửi đến",
+                "colName": "Gửi đến",
+                "selected": false,
+                "order": 12
+            },
+            {
+                "id": 14,
+                "name": "payType",
+                "label": "Cách trả phí",
+                "colName": "Cách trả phí",
+                "selected": false,
+                "order": 13
+            },
+            {
+                "id": 15,
+                "name": "value",
+                "label": "Giá trị hàng",
+                "colName": "Giá trị hàng",
+                "selected": false,
+                "order": 14
+            },
+            {
+                "id": 16,
+                "name": "status",
+                "label": "Trạng thái",
+                "colName": "Trạng thái",
+                "selected": false,
+                "order": 15
+            },
+            {
+                "id": 17,
+                "name": "warehouse",
+                "label": "Kho",
+                "colName": "Kho",
+                "selected": false,
+                "order": 16
+            },
+            {
+                "id": 18,
+                "name": "priceUnit",
+                "label": "Tỉ giá",
+                "colName": "Tỉ giá",
+                "selected": true,
+                "order": 17
+            }
+        ])
+    }
+//Ẩn cột dữ liệu khi ấn điểm bất kỳ
+    const [openPopover, setOpenPopover] = useState(false)
+    const popoverRef = useRef(null)
+    useEffect (()=>{
+        const handleClickOutside = (event) => {
+            if (popoverRef.current && !popoverRef.current.contains(event.target)) {
+                setOpenPopover(false)
+            }
+          }
+
+          document.getElementById("setclms").addEventListener('click', handleClickOutside);
+      
+          return () => {
+            document.removeEventListener('click', handleClickOutside);
+          };
+    }, [])
+    const [showPicker, setShowPicker] = useState("hidden")
+    const [showAllTime, setShowAllTime] = useState("relative text-sm left-[170px] cursor-pointer")
+
+    const handlePicker = () => {
+        setShowPicker("")
+        setShowAllTime("hidden")
+    }
 
     return (
-        <>
+        <>  
+            <div id = "setclms">
             <div className="grid grid-cols-[400px_240px_150px_300px] mx-auto gap-4 items-center">
                 <div className="relative mt-3">
                     <div className="grid grid-cols-[400px_240px_150px_300px] mx-auto mb-4 gap-4 items-center">
@@ -243,10 +510,14 @@ function Items() {
                         </div>
                     </div>
                 </div>
-                <div className='border rounded-md'>
+                <div className="relative">
                     <DatePicker.RangePicker
+                        className={showPicker}
                         onChange={handleDateChange}
                     />
+                    <p  
+                        onClick={handlePicker}
+                        className={showAllTime}>All time<CaretDownOutlined className="relative top-[-2px] left-1"/></p>
                 </div>
                 <Select
                     showSearch
@@ -257,7 +528,7 @@ function Items() {
                         (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
                     }
                     options={[
-                        { value: null, label: 'Tất cả' },
+                        { value: "", label: 'Tất cả' },
                         { value: 1, label: 'Cân nặng' },
                         { value: 2, label: 'Kiện' },
                         { value: 3, label: 'Kiện lớn' },
@@ -292,10 +563,10 @@ function Items() {
                                 onChange={(checked) => handleChange(tag, checked)}
                                 style={selectStatus.includes(tag.status) ? { backgroundColor: tag.color, color: "black" } : null}
                                 className="relative"
-                                
-                            >   <span 
-                                    style={{backgroundColor: tag.color}}
-                                    className="absolute top-1/2 left-[3.5px] transform -translate-x-1/2 -translate-y-1/2 h-2 w-2 rounded-full">
+
+                            >   <span
+                                style={{ backgroundColor: tag.color }}
+                                className="absolute top-1/2 left-[3.5px] transform -translate-x-1/2 -translate-y-1/2 h-2 w-2 rounded-full">
                                 </span>
                                 {tag.name}
                             </CheckableTag>
@@ -304,130 +575,247 @@ function Items() {
                 </div>
 
             </div>
-            <div className="text-right relative bottom-[70px]">
+            <div ref={popoverRef} className="text-right relative bottom-[70px]">
                 <Popover
+                    open={openPopover}
                     trigger="click"
                     placement="bottom"
-                    content=
-                    {<div className="w-[200px] h-[350px] overflow-auto">
-                        <button onClick={resetDefalut} className="text-indigo-700">Mặc định</button>
-                        <Checkbox.Group
-                            key={itemsTableColumn.value}
-                            onChange={getValuesChecked}
-                            className="flex flex-col"
-                            options={itemsTableColumn}
-                            defaultValue={defaultItemsTableColumn}
-                        />
-                    </div>}
+                    content={
+                        <div className="w-[210px] h-[360px]">
+                            <input type="text" className="w-full p-1 border mt-1 mb-3 focus-visible:outline-none rounded-sm"></input>
+                            <Button onClick={reset} type="link">Mặc định</Button>
+                            <div className="h-[220px] overflow-auto">
+                                {updatedItemFields.map((item) => {
+                                    return (
+                                        <Checkbox
+                                            className="flex mx-2 my-2"
+                                            key={item.id}
+                                            checked={item.selected}
+                                            onChange={e => updatedShowColumns(item.id, e.target.checked)}
+                                        >{item.label}</Checkbox>
+                                    )
+                                })}
+                            </div>
+                            <div className="text-right border-t-2 pt-4 mt-2">
+                                <Button onClick={e => setOpenPopover(false)}>Hủy</Button>
+                                <Button onClick={fetchItemFieldsUpdate} className="bg-blue-700 text-white ml-2">Lưu</Button>
+                            </div>
+                        </div>
+                    }
                 >
-                    <Button className="border-none">Cột dữ liệu <CaretDownOutlined className="text-xs relative bottom-px right-2" /></Button>
-
+                    <Button onClick={e => setOpenPopover(!openPopover)} className="border-none">Cột dữ liệu <CaretDownOutlined className="text-xs relative bottom-px right-2" /></Button>
                 </Popover>
             </div>
-            
+
             <table>
                 <thead className="border-b">
                     <tr>
-                        <th className={selectStatus.length === 1 ? "" : "hidden"}>
-                            <Checkbox
-                
-                            ></Checkbox>
+                        <th className={selectStatus.length === 1 ? "relative right-1" : "hidden"}>
+                            <Checkbox onClick={e => onCheckAll(e)} checked={
+                                idItem.length === dataGoods?.data?.length && dataGoods?.data?.length !== 0
+                            }></Checkbox>
+                            <Popover
+                                className={idItem.length === 0 ? "hidden" : "w-[2px] h-[2px]"}
+                                content={
+                                <div className="flex flex-col">
+                                <Button onClick={e => setModalDeleteOpen(true)} type="text">Xóa đơn hàng</Button>
+                                <Button onClick={e => setModalStopOpen(true)} type="text">Hủy đơn hàng</Button>
+                                </div>
+                                } 
+                                trigger="click"
+                                placement="bottomRight"
+                                >
+                                <Button className="absolute border-none left-3 top-5"><CaretDownOutlined /></Button>
+                            </Popover>
                         </th>
-                        <th>STT</th>
+                        <th className="px-4">STT</th>
                         {
-                            checkedValues?.map((item, index) => {
-                                return (
-                                    <th className='px-4' key={index}>{item}</th>
-                                )
+                            itemFields?.map((item, index) => {
+                                if (item.selected) {
+                                    return (
+                                        <th className='px-4 relative w-24 group' key={item.id}>
+                                            {item.colName}
+                                            <div className="absolute w-full h-full bg-slate-300 inset-0 hidden group-hover:flex">
+                                                <Button
+                                                    data-value={index}
+                                                    onClick={() => moveLeft(index, itemFields)}
+                                                    className={index === 0 ? "hidden" :
+                                                        index === itemFields.length - 1 ? "w-full h-full rounded-none flex items-center justify-center" :
+                                                            "w-6/12 h-full rounded-none flex items-center justify-center"}
+                                                    type="text"
+                                                ><ArrowLeftOutlined /></Button>
+                                                <Button
+                                                    onClick={() => moveRight(index, itemFields)}
+                                                    data-value={index}
+                                                    className={index === 0 ? "w-full h-full rounded-none flex items-center justify-center" :
+                                                        index === itemFields.length - 1 ? "hidden" :
+                                                            "w-6/12 h-full rounded-none flex items-center justify-center"}
+                                                    type="text"
+                                                ><ArrowRightOutlined /></Button>
+                                            </div>
+                                        </th>
+                                    )
+                                }
+                                return null
                             })
                         }
                     </tr>
                 </thead>
-               
+
                 <tbody className="border-b">
-                   {
+                    {
                         dataGoods.data?.map((item, index) => {
                             return (
-                                
-                                <tr className={selectStatus.length === 0 ? "border-b" : 
-                                                 (() => {
-                                                    switch(item.status){
-                                                        case "0":
-                                                            return "border-b bg-[#D9EDF7]"
-                                                        case "1":
-                                                            return "border-b bg-[#DFF0D8]"
-                                                        case "2":
-                                                            return "border-b bg-[#bbf7d0]"
-                                                        case "3":
-                                                            return "border-b bg-[#86efac]"
-                                                        case "4":
-                                                            return "border-b bg-[#dcfce7]"
-                                                        case "-3":
-                                                            return "border-b bg-[#E7E7E7]"
-                                                        default:
-                                                            return null
-                                                    } 
-
-                                                })()
-                                }>  
-                                    <td className={selectStatus.length === 1 ? "" : "hidden"}>
-                                        <Checkbox></Checkbox>
-                                    </td>
-                                    <td>{currentPage > 0 ? numberPage * (currentPage - 1) + index + 1 : index + 1}</td>
-                                    {checkedValues?.map((i, index) => (
-                                        <td className='px-4 py-4' key={index}>
-                                            {   
-                                                i === 'Khách hàng' ? <Link to='/' className="text-indigo-700">{item.customer.name}</Link> :
-                                                i === 'Tên hàng hóa' ? <Link to='/' className="text-indigo-700">{item.name}</Link> :
-                                                i === 'Đối tác' ? <Link to='/' className="text-indigo-700">{item.partner.name}</Link> :
-                                                i === 'Cân nặng(KG)' ? <Link to='/' className="text-indigo-700">{item.weight}</Link> :
-                                                i === 'Ngày nhận' ? item.fromDate :
-                                                i === 'Ngày giao hàng' ? item.finishDelivery :
-                                                i === 'Khách hàng trả' ? item.prepay :
-                                                i === 'Trả đối tác' ? item.shipFee :
-                                                i === 'Trả trước' ? item.prepay :
-                                                i === 'Còn lại' ? item.value :
-                                                i === 'Vị trí hiện tại' ? item.currentLocation :
-                                                i === 'Gửi từ' ? item.from :
-                                                i === 'Gửi đến' ? item.to :
-                                                i === 'Cách trả phí' ? item.payType :
-                                                i === 'Giá trị hàng' ? item.value :
-                                                i === 'Trạng thái' ? (() => {
-                                                    switch (item.status) {
-                                                      case "0":
-                                                        return "Đang chờ";
-                                                      case "1":
-                                                        return "Đang VC";
-                                                      case "2":
-                                                        return "Hoàn thành";
-                                                      case "3":
-                                                        return "Đã giao KH";
-                                                      case "4":
-                                                        return "Hoàn thành VC";
-                                                      case "-3":
-                                                        return "Hủy";
-                                                      default:
-                                                        return null;
-                                                    }
-                                                  })() :
-                                                i === 'Kho' ? <Link to='/' className="text-indigo-700">{item.warehouse.name}</Link> :
-                                                i === 'Tỉ giá' ? item.price :
-                                                null
+                                <tr key={index}
+                                    className={selectStatus?.length === 0 ? "border-b group" :
+                                        (() => {
+                                            switch (item.status) {
+                                                case "0":
+                                                    return "border-b bg-[#D9EDF7] group"
+                                                case "1":
+                                                    return "border-b bg-[#DFF0D8] group"
+                                                case "2":
+                                                    return "border-b bg-[#bbf7d0] group"
+                                                case "3":
+                                                    return "border-b bg-[#86efac] group"
+                                                case "4":
+                                                    return "border-b bg-[#dcfce7] group"
+                                                case "-3":
+                                                    return "border-b bg-[#E7E7E7] group"
+                                                default:
+                                                    return null
                                             }
-                                        </td>
-                                    ))} 
+
+                                        })()
+                                    }>
+                                    <td className={selectStatus?.length === 1 ? "px-2" : "hidden"}>
+                                        <Checkbox
+                                            onChange={e => handleListId(e, item.id)}
+                                            checked={idItem?.includes(item.id)}
+                                        ></Checkbox>
+                                    </td>
+
+                                    <td className="px-4">
+                                        <div>{currentPage > 0 ? numberPage * (currentPage - 1) + index + 1 : index + 1}</div>
+                                        <div className="relative bottom-1 hidden group-hover:flex">
+                                            <button
+                                                onClick={() => showModalDelete(item.id)}
+                                                className="absolute"
+                                            ><DeleteFilled className="text-indigo-700" />
+                                            </button>
+                                            <button
+                                                onClick={() => showModalStop(item.id)}
+                                                className={item.status === "-3" ? "hidden" : "absolute left-4"}
+                                            ><StopFilled className="text-indigo-700" />
+                                            </button>
+                                        </div>
+                                    </td>
+
+
+                                    {itemFields?.map((i, index) => {
+                                        if (i.selected) return (
+                                            <td className='px-4 py-4' key={index}>
+                                                {
+                                                    i.name === 'customer' ? <Link to='/' className="text-indigo-700">{item.customer.name}</Link> :
+                                                    i.name === 'name' ? <Link to='/' className="text-indigo-700">{item.name}</Link> :
+                                                    i.name === 'partner' ? <Link to='/' className="text-indigo-700">{item.partner.name}</Link> :
+                                                    i.name === 'weight' ? <Link to='/' className="text-indigo-700">{Intl.NumberFormat().format(item.weight)}</Link> :
+                                                    i.name === 'startDate' ? item.fromDate.split(" ")[0] :
+                                                    i.name === 'endDate' ? item.finishDelivery :
+                                                    i.name === 'customerPaid' ? Intl.NumberFormat().format(item.price) :
+                                                    i.name === 'payPartner' ? Intl.NumberFormat().format(item.price * 60 / 100) :
+                                                    i.name === 'prepaid' ? Intl.NumberFormat().format(item.price) :
+                                                    i.name === 'remainPrice' ? item.price*40/100 :
+                                                    i.name === 'currentLocation' ? item.currentLocation :
+                                                    i.name === 'from' ? item.from :
+                                                    i.name === 'to' ? item.to :
+                                                    i.name === 'payType' ? (() => {
+                                                        switch (item.payType) {
+                                                            case "1":
+                                                                return "Cân nặng";
+                                                            case "2":
+                                                                return "Kiện";
+                                                            case "3":
+                                                                return "Kiện lớn";
+                                                            case "4":
+                                                                return "Phần trăm";
+                                                            case "5":
+                                                                return "Tự nhập";
+                                                            default:
+                                                                return null;
+                                                        }
+                                                    })() :
+                                                        i.name === 'value' ? Intl.NumberFormat().format(item.value) :
+                                                        i.name === 'status' ? (() => {
+                                                            switch (item.status) {
+                                                                case "0":
+                                                                        return "Đang chờ";
+                                                                case "1":
+                                                                        return "Đang VC";
+                                                                case "2":
+                                                                        return "Hoàn thành";
+                                                                case "3":
+                                                                        return "Đã giao KH";
+                                                                case "4":
+                                                                        return "Hoàn thành VC";
+                                                                case "-3":
+                                                                        return "Hủy";
+                                                                default:
+                                                                        return null;
+                                                                }
+                                                            })() :
+                                                            i.name === 'warehouse' ? <Link to='/' className="text-indigo-700">{item.warehouse?.name}</Link> :
+                                                            i.name === 'priceUnit' ? Intl.NumberFormat().format(item.price_unit) :
+                                                            null                                                   
+                                                }
+                                            </td>
+                                        )
+                                        return null
+                                    }
+                                    )}
+
                                 </tr>
                             )
                         })
                     }
-                
                 </tbody>
-                
                 <tfoot className="font-medium">
                     <tr>
                         <td>{dataGoods.count > 0 ? dataGoods.count : null}</td>
+                        {
+                            itemFields?.map((item)=>{
+                               if(item.selected){
+                                return (
+                                <td className= {item.name === 'remainPrice' && dataGoods.totalPrice*40/100 > 0 ? "text-emerald-400" : null }>
+                                {item.name === 'weight' ? Intl.NumberFormat().format(dataGoods.totalKg) + " KG":
+                                item.name === 'customerPaid' ? Intl.NumberFormat().format(dataGoods.totalPrice) + " VNĐ" :
+                                item.name === 'payPartner' ? Intl.NumberFormat().format(dataGoods.totalPrice*60/100) + " VNĐ" :
+                                item.name === 'prepaid' ? Intl.NumberFormat().format(dataGoods.totalPrice) + " VNĐ" :
+                                item.name === 'remainPrice' ? Intl.NumberFormat().format(dataGoods.totalPrice*40/100) + " VNĐ" : null} 
+                                </td>)
+                            }
+                            return null
+
+                            })
+                        }
                     </tr>
                 </tfoot>
+                <Modal
+                    title="Confirm Delete"
+                    cancelText="Hủy"
+                    okText="Thực hiện"
+                    okButtonProps={{ className: "bg-[#BB0000] hover:bg-[blue]" }}
+                    open={modalDeleteOpen} onOk={handleOkDelete} onCancel={handleCancelModal}>
+                    <p>Bạn có muốn xóa không?</p>
+                </Modal>
+                <Modal
+                    title="Xác nhận cập nhật trạng thái hủy"
+                    cancelText="Cancel"
+                    okText="Thực hiện"
+                    okButtonProps={{ className: "bg-[#BB0000] hover:bg-[blue]" }}
+                    open={modalStopOpen} onOk={handleOkStop} onCancel={handleCancelModal}>
+                    <p>Bạn có muốn huỷ không?</p>
+                </Modal>
             </table>
             <div className="flex mt-2 justify-between pt-4">
                 <div className={dataGoods.count > 0 ? "flex" : "hidden"}>
@@ -472,7 +860,7 @@ function Items() {
                     </Button>,
                     <Button
                         className="bg-indigo-700"
-                        key="submit and continue" type="primary" loading={loading} 
+                        key="submit and continue" type="primary" loading={loading}
                         onClick={handleSubmitAndContinue}>
                         Tạo mới và tiếp tục
                     </Button>,
@@ -517,7 +905,7 @@ function Items() {
                     <div className="grid grid-cols-[130px_1fr] mt-5">
                         <div className="flex items-center justify-start ml-4">Cân nặng</div>
                         <div className="flex items-center">
-                            <input 
+                            <input
                                 onChange={e => setWeight(e.target.value)}
                                 type="number" name="weight" className="mr-4 numberInput border border-gray-300 text-sm block p-1.5 rounded-sm outline-[green] border-red w-[30%]"></input>
                             <span>(Kg)</span>
@@ -525,7 +913,7 @@ function Items() {
                     </div>
                     <div className="grid grid-cols-[130px_1fr] mt-5">
                         <div className="flex items-center justify-start ml-4">Giá trị hàng hóa</div>
-                        <input 
+                        <input
                             onChange={e => setvalue(e.target.value)}
                             type="number" name="value" className="mr-4 numberInput border border-gray-300 text-sm block p-1.5 rounded-sm outline-[green] w-[40%]">
                         </input>
@@ -535,45 +923,45 @@ function Items() {
                         <div className="grid grid-cols-3 ">
                             <button
                                 type="button"
-                                onClick={() => setPayType("1")} 
+                                onClick={() => setPayType("1")}
                                 className={selectedButton === "1" ? "border w-[70%] px-2.5 py-1.5 rounded-3xl bg-indigo-700 text-white" :
-                                 "border w-[70%] px-2.5 py-1.5 rounded-3xl bg-[#f0f0f0] text-black"}
-                                >Cân nặng
+                                    "border w-[70%] px-2.5 py-1.5 rounded-3xl bg-[#f0f0f0] text-black"}
+                            >Cân nặng
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setPayType("2")} 
+                                onClick={() => setPayType("2")}
                                 className={selectedButton === "2" ? "border w-[70%] px-2.5 py-1.5 rounded-3xl bg-indigo-700 text-white" :
-                                 "border w-[70%] px-2.5 py-1.5 rounded-3xl bg-[#f0f0f0] text-black"}
-                                >Kiện
+                                    "border w-[70%] px-2.5 py-1.5 rounded-3xl bg-[#f0f0f0] text-black"}
+                            >Kiện
                             </button>
                             <button
                                 type="button"
-                                onClick={() => setPayType("3")} 
+                                onClick={() => setPayType("3")}
                                 className={selectedButton === "3" ? "border w-[70%] px-2.5 py-1.5 rounded-3xl bg-indigo-700 text-white" :
-                                 "border w-[70%] px-2.5 py-1.5 rounded-3xl bg-[#f0f0f0] text-black"}
-                                >Kiện lớn
+                                    "border w-[70%] px-2.5 py-1.5 rounded-3xl bg-[#f0f0f0] text-black"}
+                            >Kiện lớn
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setPayType("4")}
                                 className={selectedButton === "4" ? "border w-[70%] px-2.5 py-1.5 rounded-3xl bg-indigo-700 text-white mt-3" :
-                                "border w-[70%] px-2.5 py-1.5 rounded-3xl text-black bg-[#f0f0f0] mt-3"}
-                                >Phần trăm
+                                    "border w-[70%] px-2.5 py-1.5 rounded-3xl text-black bg-[#f0f0f0] mt-3"}
+                            >Phần trăm
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setPayType("5")}
                                 className={selectedButton === "5" ? "border w-[70%] px-2.5 py-1.5 rounded-3xl bg-indigo-700 text-white mt-3" :
-                                "border w-[70%] px-2.5 py-1.5 rounded-3xl text-black bg-[#f0f0f0] mt-3"}
-                                >Tự nhập
+                                    "border w-[70%] px-2.5 py-1.5 rounded-3xl text-black bg-[#f0f0f0] mt-3"}
+                            >Tự nhập
                             </button>
                         </div>
                     </div>
                     <div className="grid grid-cols-[130px_1fr_1fr] mt-5">
                         <div className="flex items-center justify-start ml-4">Chi phí</div>
                         <input
-                            onChange={e => setPrice(e.target.value)} 
+                            onChange={e => setPrice(e.target.value)}
                             type="number" name="price_unit" className="mr-4 numberInput border border-gray-300 text-sm block p-1.5 rounded-sm outline-[green]">
                         </input>
                         <p>= 0</p>
@@ -586,13 +974,14 @@ function Items() {
                     </div>
                     <div className="grid grid-cols-[130px_1fr] mt-5">
                         <div className="flex items-center justify-start ml-4">Ghi chú</div>
-                        <textarea 
+                        <textarea
                             onChange={e => setNote(e.target.value)}
                             name="note" className="mr-4 numberInput border border-gray-300 text-sm block p-1.5 rounded-sm outline-[green] w-[100%]">
                         </textarea>
                     </div>
                 </form>
             </Modal>
+            </div>  
         </>
     )
 }

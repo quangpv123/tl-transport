@@ -48,7 +48,7 @@ function Logout () {
                 </div>
             </div>
         </div>
-        <div className={btnLogout ? "absolute w-[120px] border top-[60px] right-[10px] bg-white py-[10px]" : "hidden absolute w-[120px] border top-[60px] right-[10px] bg-white py-[10px]"}>
+        <div className={btnLogout ? "absolute w-[120px] border top-[60px] right-[10px] bg-white py-[10px]" : "hidden"}>
             <button className="hover:bg-slate-200 py-1 w-10/12 text-left ml-2.5 rounded">User</button>
             <button className="hover:bg-slate-200 py-1 w-10/12 text-left ml-2.5 rounded">User Settings</button>
             <button onClick={handleLogout} className="hover:bg-slate-200 py-1 w-10/12 text-left ml-2.5 rounded">Log out</button>

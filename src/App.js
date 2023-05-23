@@ -4,16 +4,13 @@ import Nav from './nav/nav';
 
 
 function App() {
-   let cookie = document.cookie
-   if (!cookie.includes("PHPSESSID")){
+   if (!document.cookie.includes("PHPSESSID")){
     return (
       < Form />
     )
    } else {
     return (
-      <>
       < Nav />
-      </>
     )
    }
 }
