@@ -4,11 +4,13 @@ import { DatePicker, Select, Tag, Popover, Button, Checkbox, Modal } from 'antd'
 import moment from 'moment'
 import 'moment/locale/vi'
 import axios from "axios"
-import { CaretDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, DeleteFilled, StopFilled } from '@ant-design/icons'
+import { CaretDownOutlined, ArrowLeftOutlined, ArrowRightOutlined, DeleteFilled, StopFilled, LoadingOutlined, CheckCircleFilled } from '@ant-design/icons'
 import ReactPaginate from "react-paginate"
 
 function Items() {
     const { id } = useParams()
+    const [showNotification, setShowNotification] = useState(false)
+    const [isProcessing, setIsProcessing] = useState(false)
     //Lấy number page
     const [numberPage, setNumberPage] = useState(20)
     const [currentPage, setCurrentPage] = useState(0)
@@ -38,6 +40,7 @@ function Items() {
         } else {
             setFromDate(null)
             settoDate(null)
+            setCurrentPage(0)
             setShowPicker("hidden")
             setShowAllTime("relative text-sm left-[170px] cursor-pointer")
         }
@@ -55,6 +58,7 @@ function Items() {
 
     useEffect(() => {
         const owner = async () => {
+            setIsProcessing(true)
             try {
                 const response = await axios.get('/api/chukhos', {
                     params: {
@@ -63,8 +67,10 @@ function Items() {
                     }
                 })
                 setDataOwner(response.data.data)
+                setIsProcessing(false)
             } catch (error) {
                 console.log(error)
+                setIsProcessing(false)
             }
         }
         owner()
@@ -95,6 +101,7 @@ function Items() {
     //Get API hàng hóa render ra màn hình
     const [dataGoods, setDataGoods] = useState([])
     const fetchHangHoa = useCallback(async () => {
+        setIsProcessing(true)
         try {
             const response = await axios.get('/api/hanghoas', {
                 params:
@@ -111,8 +118,10 @@ function Items() {
             })
             setDataGoods(response.data)
             setButtonTotal(Math.ceil(response.data.count / numberPage))
+            setIsProcessing(false)
         } catch (error) {
             console.log(error)
+            setIsProcessing(false)
         } finally {
             setIdItem([])
         }
@@ -143,7 +152,7 @@ function Items() {
         addItems()
         setTimeout(() => {
             setLoading(false);
-        }, 2000);
+        }, 1000);
     };
     const handleSubmitAndOut = () => {
         setLoading(true);
@@ -163,18 +172,22 @@ function Items() {
 
     useEffect(() => {
         const getInfo = async () => {
+            setIsProcessing(true)
             try {
                 const response = await axios.get(`/api/khachhangs/${id}`)
                 setFrom(response.data.transferFrom)
                 setTo(response.data.transferTo)
+                setIsProcessing(false)
             } catch (error) {
                 console.log(error)
+                setIsProcessing(false)
             }
         }
         getInfo()
     }, [id])
 
     const addItems = async () => {
+        setIsProcessing(true)
         try {
             await axios.post('/api/hanghoas', {
                 customerId: id,
@@ -190,8 +203,14 @@ function Items() {
                 weight,
 
             })
+            setIsProcessing(false)
+            setShowNotification(true)
+            setTimeout(() => {
+                setShowNotification(false);
+              }, 2000)
         } catch (error) {
             console.log(error)
+            setIsProcessing(false)
         }
     }
 
@@ -237,22 +256,29 @@ function Items() {
         setIdItem(idItem.filter(item => item !== idBtn))
     }
     const handleOkDelete = async () => {
+        setIsProcessing(true)
         try {
            await axios.post('/api/hanghoas/delete', { id: idItem });
+           setIsProcessing(false)
         } catch (error) {
             console.error(error);
+            setIsProcessing(false)
         } finally {
             setIdItem([])
             fetchHangHoa()
             setModalDeleteOpen(false)
+            
         }
     }
 
     const handleOkStop = async () => {
+        setIsProcessing(true)
         try {
             await axios.post(`/api/hanghoas/${idItem}/-3`);
+            setIsProcessing(false)
         } catch (error) {
             console.error(error);
+            setIsProcessing(false)
         } finally {
             setIdItem([])
             fetchHangHoa()
@@ -288,7 +314,7 @@ function Items() {
         }
     }
 
-
+    const [update, setUpdate] = useState([])
     const updatedShowColumns = (id, checked) => {
         const update = updatedItemFields?.map(item => {
             if (item.id === id) {
@@ -297,6 +323,11 @@ function Items() {
             return item
         })
         setUpdatedItemFields(update)
+    }
+
+    const deleteUpdate = () => {
+        setOpenPopover(false)
+        setUpdatedItemFields(itemFields)
     }
 
     const moveLeft = (index, itemFields) => {
@@ -494,9 +525,17 @@ function Items() {
         setShowPicker("")
         setShowAllTime("hidden")
     }
-
+    console.log(itemFields)
     return (
         <>  
+            <div className={isProcessing ? 'z-[9999] absolute left-2/4 top-0 flex bg-amber-50 w-[160px] h-[40px] border border-amber-200 items-center' : 'hidden'}>
+                <LoadingOutlined  className='mr-2 px-2'/>
+                <p>Đang tải dữ liệu</p>
+            </div>
+            <div id = "notification" className={ showNotification ? 'z-[9999] absolute left-[40%] top-[8%] flex items-center border shadow bg-[white] px-4 py-2' : 'hidden'}>
+                <CheckCircleFilled className='text-[green]'/>
+                <p>Một hàng hóa vừa được thêm mới</p>
+            </div>
             <div id = "setclms">
             <div className="grid grid-cols-[400px_240px_150px_300px] mx-auto gap-4 items-center">
                 <div className="relative mt-3">
@@ -597,7 +636,7 @@ function Items() {
                                 })}
                             </div>
                             <div className="text-right border-t-2 pt-4 mt-2">
-                                <Button onClick={e => setOpenPopover(false)}>Hủy</Button>
+                                <Button onClick={deleteUpdate}>Hủy</Button>
                                 <Button onClick={fetchItemFieldsUpdate} className="bg-blue-700 text-white ml-2">Lưu</Button>
                             </div>
                         </div>
@@ -698,16 +737,20 @@ function Items() {
                                     <td className="px-4">
                                         <div>{currentPage > 0 ? numberPage * (currentPage - 1) + index + 1 : index + 1}</div>
                                         <div className="relative bottom-1 hidden group-hover:flex">
+                                            <Popover content={(<div>Xóa</div>)}>
                                             <button
                                                 onClick={() => showModalDelete(item.id)}
                                                 className="absolute"
                                             ><DeleteFilled className="text-indigo-700" />
                                             </button>
+                                            </Popover>
+                                            <Popover content={(<div>Hủy</div>)}>
                                             <button
                                                 onClick={() => showModalStop(item.id)}
                                                 className={item.status === "-3" ? "hidden" : "absolute left-4"}
                                             ><StopFilled className="text-indigo-700" />
                                             </button>
+                                            </Popover>
                                         </div>
                                     </td>
 

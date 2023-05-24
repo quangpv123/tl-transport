@@ -3,11 +3,12 @@ import axios from 'axios';
 import { useParams, Link, Outlet } from 'react-router-dom';
 import Select from 'react-select';
 import { Popover, Button, Modal } from 'antd'
-import { InfoCircleFilled } from '@ant-design/icons'
+import { InfoCircleFilled, LoadingOutlined, CheckCircleFilled } from '@ant-design/icons'
 
 
 function InfoCustomer() {
-
+    const [isProcessing, setIsProcessing] = useState(false)
+    const [showNotification, setShowNotification] = useState(false)
     const { id } = useParams()
     const [data, setData] = useState("")
     const [dataParents, setDataParents] = useState("")
@@ -25,6 +26,7 @@ function InfoCustomer() {
 
     useEffect(() => {
         const fetchData = async () => {
+            setIsProcessing(true)
             try {
                 const response = await axios.get('/api/khachhangs');
                 setData(response.data.data);
@@ -40,8 +42,10 @@ function InfoCustomer() {
                 setPricePerPercente(response.data.data[id - 1].pricePerPercent)
                 setTransferFrom(response.data.data[id - 1].transferFrom)
                 setTransferTo(response.data.data[id - 1].transferTo)
+                setIsProcessing(false)
             } catch (error) {
                 console.error(error);
+                setIsProcessing(false)
             }
         };
 
@@ -49,6 +53,7 @@ function InfoCustomer() {
     }, [id])
 
     const upInfoCustomer = async () => {
+        setIsProcessing(true)
         try {
             await axios.post(`/api/khachhangs/${id}`,
                 {
@@ -64,8 +69,14 @@ function InfoCustomer() {
                     transferTo
                 }
             );
+            setIsProcessing(false)
+            setShowNotification(true)
+            setTimeout(() => {
+                setShowNotification(false);
+            }, 2000);
         } catch (error) {
             console.error(error);
+            setIsProcessing(false)
         }
     };
 
@@ -98,7 +109,14 @@ function InfoCustomer() {
 
     return (
         <>
-
+            <div className={isProcessing ? 'z-[9999] absolute left-2/4 top-0 flex bg-amber-50 w-[160px] h-[40px] border border-amber-200 items-center' : 'hidden'}>
+                <LoadingOutlined  className='mr-2 px-2'/>
+                <p>Đang tải dữ liệu</p>
+            </div>
+            <div className={ showNotification ? 'px-4 py-2 bg-[white] z-[9999] shadow border absolute left-[40%] top-[8%] flex items-center' : 'hidden'}>
+                <CheckCircleFilled className='text-[green]'/>
+                <p>Cập nhật thông tin khách hàng thành công</p>
+            </div>
             <div className="mx-auto mp-5 w-10/12 mt-[20px] max-w-[1124px]">
 
                 <p className="text-[26px] flex items-center mb-4">

@@ -5,6 +5,7 @@ import Select from 'react-select'
 import './AddCustomer.css'
 import './ListCustomers'
 import DataContext from './DataContext'
+import { LoadingOutlined, CheckCircleFilled } from '@ant-design/icons'
 
 
 function AddCustomer({ handleShowForm }) {
@@ -16,7 +17,6 @@ function AddCustomer({ handleShowForm }) {
     const [borderColorMobile, setBorderColorMobile] = useState(borderBlack)
     const [borderColorFrom, setBorderColorFrom] = useState(borderBlack)
     const [borderColorTo, setBorderColorTo] = useState(borderBlack)
-
 
     const handleHidden = () => {
         handleShowForm(false)
@@ -32,9 +32,11 @@ function AddCustomer({ handleShowForm }) {
     const [pricePerPercent, setPricePerPercente] = useState("")
     const [transferFrom, setTransferFrom] = useState("")
     const [transferTo, setTransferTo] = useState("")
-
+    const [isProcessing, setIsProcessing] = useState(false)
+    const [showNotification, setShowNotification] = useState(false)
 
     const upInfoCustomer = async () => {
+        setIsProcessing(true)
         try {
             await axios.post('/api/khachhangs',
                 {
@@ -50,8 +52,14 @@ function AddCustomer({ handleShowForm }) {
                     transferTo
                 }
             );
+            setIsProcessing(false)
+            setShowNotification(true)
+            setTimeout(() => {
+                setShowNotification(false);
+              }, 2000);
         } catch (error) {
             console.error(error);
+            setIsProcessing(false)
         }
     };
 
@@ -70,8 +78,8 @@ function AddCustomer({ handleShowForm }) {
     }
     const changeBorderColorMobile = () => {
         (mobile.startsWith("03") || mobile.startsWith("05") || mobile.startsWith("07")
-        || mobile.startsWith("08") || mobile.startsWith("09"))
-        && mobile.length === 10 ? setBorderColorMobile(borderBlack) : setBorderColorMobile(borderRed)
+            || mobile.startsWith("08") || mobile.startsWith("09"))
+            && mobile.length === 10 ? setBorderColorMobile(borderBlack) : setBorderColorMobile(borderRed)
     }
     const changeBorderColorFrom = () => {
         transferFrom.length === 0 ? setBorderColorFrom(borderRed) : setBorderColorFrom(borderBlack)
@@ -81,23 +89,30 @@ function AddCustomer({ handleShowForm }) {
     }
 
     const addRef = useRef(null)
-    useEffect (()=>{
+    useEffect(() => {
         const handleClickOutside = (event) => {
             if (addRef.current && !addRef.current.contains(event.target)) {
                 handleShowForm(false)
             }
-          }
+        }
 
-          document.getElementById("addctm").addEventListener('click', handleClickOutside);
-      
-          return () => {
+        document.getElementById("addctm").addEventListener('click', handleClickOutside);
+
+        return () => {
             document.removeEventListener('click', handleClickOutside);
-          };
-    }, [handleShowForm]) 
+        };
+    }, [handleShowForm])
 
 
     return (
-        <>
+        <>  <div className={isProcessing ? 'z-[9999] absolute left-2/4 top-0 flex bg-amber-50 w-[160px] h-[40px] border border-amber-200 items-center' : 'hidden'}>
+                <LoadingOutlined className='mr-2 px-2' />
+                <p>Đang tải dữ liệu</p>
+            </div>
+            <div className={ showNotification ? 'absolute left-[40%] top-[8%] flex items-center' : 'hidden'}>
+                <CheckCircleFilled className='text-[green]'/>
+                <p>Một khách hàng được thêm thành công</p>
+            </div>
             <div id="addctm" className="modalOverlay absolute w-full h-full bg-black/20"></div>
             <div ref={addRef} className="modalBody h-[500px] w-11/12 max-w-[600px] bg-white mx-auto mt-24 z-10 rounded">
                 <div className="flex justify-between px-3 py-3">
@@ -153,14 +168,14 @@ function AddCustomer({ handleShowForm }) {
                             <div className="flex items-center justify-start ml-4">Vận chuyển</div>
                             <div className="grid grid-cols-[215px_40px_215px]">
                                 <input
-                                onBlur={changeBorderColorFrom}
+                                    onBlur={changeBorderColorFrom}
                                     onChange={e => setTransferFrom(e.target.value)}
                                     name="transferFrom" placeholder="Từ" className={borderColorFrom}>
 
                                 </input>
                                 <div className="pl-2">_</div>
                                 <input
-                                onBlur={changeBorderColorTo}
+                                    onBlur={changeBorderColorTo}
                                     onChange={e => setTransferTo(e.target.value)}
                                     name="transferTo" placeholder="Đến" className={borderColorTo}>
 

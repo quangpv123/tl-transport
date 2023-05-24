@@ -4,7 +4,7 @@ import AddCustomer from './AddCustomer'
 import DataContext from './DataContext';
 import ReactPaginate from "react-paginate";
 import { Link } from 'react-router-dom';
-
+import { LoadingOutlined } from '@ant-design/icons'
 
 function Customers() {
 
@@ -15,9 +15,12 @@ function Customers() {
   const [valueSeach, setValueSerch] = useState("")
   const [buttonTotal, setButtonTotal] = useState("")
   const [currentPage, setCurrentPage] = useState(0);
+  const [isProcessing, setIsProcessing] = useState(false);
+
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsProcessing(true)
       try {
         const response = await axios.get('/api/khachhangs', {
           params:
@@ -29,9 +32,11 @@ function Customers() {
         setData(response.data.data);
         setCount(response.data.count)
         setDataParents(response.data.parents)
-        setButtonTotal(Math.ceil(response.data.count / numberPage))
+        setButtonTotal(Math.ceil(response.data.count / numberPage)) 
+        setIsProcessing(false)
       } catch (error) {
         console.error(error);
+        setIsProcessing(false)
       }
     };
 
@@ -50,6 +55,7 @@ function Customers() {
 
   //Search
   const searchData = async () => {
+    setIsProcessing(true)
     try {
       const response = await axios.get('/api/khachhangs', {
         params:
@@ -61,8 +67,10 @@ function Customers() {
       });
       setData(response.data.data);
       setCount(response.data.count);
+      setIsProcessing(false)
     } catch (error) {
       console.error(error);
+      setIsProcessing(false)
     }
   };
 
@@ -80,6 +88,10 @@ function Customers() {
 
   return (
     <DataContext.Provider value={{data, dataParents}}>
+      <div className={isProcessing ? 'z-[9999] absolute left-2/4 top-0 flex bg-amber-50 w-[160px] h-[40px] border border-amber-200 items-center' : 'hidden'}>
+      <LoadingOutlined  className='mr-2 px-2'/>
+      <p>Đang tải dữ liệu</p>
+      </div>
       <div className="w-10/12 max-w-[1024px] mt-[90px] mx-auto px-8">
         <div className="flex justify-between">
           <div className="flex">

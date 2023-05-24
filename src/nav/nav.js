@@ -6,7 +6,7 @@ import RouteItems from '../router/router'
 function Nav() {
   return (
     <>
-      <div id="nav" className="flex justify-between h-[53px] mx-auto mp-5 bg-amber-50 w-10/12 border rounded-md border-[f8f8f8] mt-[-2px] max-w-[1124px]">
+      <div id="nav" className="flex justify-between h-[53px] mx-auto mp-5 bg-[#FFFFFF] w-10/12 border rounded-md border-[f8f8f8] mt-[-2px] max-w-[1124px]">
         <div>
           <img src="https://transport-old.techlead.vn/assets/images/logo.png" alt="TechLead"
             className="h-[20px] mt-4 ml-4"
